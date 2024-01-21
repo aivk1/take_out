@@ -1,7 +1,10 @@
 package com.sky.service.impl;
 
 import com.sky.constant.MessageConstant;
+import com.sky.constant.PasswordConstant;
 import com.sky.constant.StatusConstant;
+import com.sky.context.BaseContext;
+import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.entity.Employee;
 import com.sky.exception.AccountLockedException;
@@ -12,6 +15,8 @@ import com.sky.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
+
+import java.time.LocalDateTime;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -40,6 +45,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         //密码比对
         // TODO 后期需要进行md5加密，然后再进行比对
+        password = DigestUtils.md5DigestAsHex(password.getBytes());
         if (!password.equals(employee.getPassword())) {
             //密码错误
             throw new PasswordErrorException(MessageConstant.PASSWORD_ERROR);
@@ -52,6 +58,35 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         //3、返回实体对象
         return employee;
+    }
+
+    /**
+     * 员工注册
+     *
+     * @param employeeDTO
+     * @return
+     */
+    public void save(EmployeeDTO employeeDTO){
+        Employee employee = new Employee();
+        employee.setName(employeeDTO.getName());
+        employee.setUsername(employeeDTO.getUsername());
+        employee.setPhone(employeeDTO.getPhone());
+        employee.setIdNumber(employeeDTO.getIdNumber());
+        employee.setSex(employeeDTO.getSex());
+
+
+        //设置状态
+        employee.setStatus(StatusConstant.ENABLE);
+
+        //设置默认密码
+        employee.setPassword(DigestUtils.md5DigestAsHex(PasswordConstant.DEFAULT_PASSWORD.getBytes()));
+
+        employee.setCreateTime(LocalDateTime.now());
+        employee.setUpdateTime(LocalDateTime.now());
+
+        employee.setCreateUser(BaseContext.getCurrentId());
+        employee.setCreateUser(BaseContext.getCurrentId());
+        employeeMapper.insert(employee);
     }
 
 }

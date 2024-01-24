@@ -28,4 +28,18 @@ public interface EmployeeService {
      * @return
      */
     public PageResult pageQuery(EmployeePageQueryDTO employeePageQueryDTO);
+
+    /**
+     * 员工登录
+     * @param employee
+     * @return
+     */
+    public void update(Employee employee);
+
+    /**
+     * 员工登录
+     * @param id
+     * @return
+     */
+    public Employee getById(long id);
 }

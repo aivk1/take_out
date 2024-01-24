@@ -88,4 +88,37 @@ public class EmployeeController {
         return Result.success(pageResult);
     }
 
+    @PostMapping("/status/{status}")
+    @ApiOperation("启用、禁用员工")
+    public Result startOrStop(@PathVariable("status") Integer status, Integer id){
+        Employee employee = Employee.builder()
+                .status(status)
+                .id(id.longValue())
+                .build();
+        employeeService.update(employee);
+        return Result.success();
+    }
+
+    @GetMapping("/{id}")
+    @ApiOperation("根据id查询员工信息")
+    public Result<Employee> getById(@PathVariable("id") Integer id){
+        Employee employee = employeeService.getById(id.longValue());
+        return Result.success(employee);
+    }
+
+    @PutMapping
+    @ApiOperation("修改员工信息")
+    public Result update(@RequestBody EmployeeDTO employeeDTO){
+        Employee employee = Employee.builder()
+                .id(employeeDTO.getId())
+                .username(employeeDTO.getUsername())
+                .name(employeeDTO.getName())
+                .phone(employeeDTO.getPhone())
+                .sex(employeeDTO.getSex())
+                .idNumber(employeeDTO.getIdNumber())
+                .build();
+        employeeService.update(employee);
+        return Result.success();
+    }
+
 }

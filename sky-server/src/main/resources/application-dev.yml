@@ -11,3 +11,11 @@ sky:
     access-key-id: LTAI5tLL1k6BbFidZJPX3opM
     endpoint: oss-cn-beijing.aliyuncs.com
     bucket-name: aivk-sky
+  redis:
+    host: localhost
+    port: 6379
+    password: qaz135790
+    database: 0
+  wechat:
+    appid: wxfd520f268379a53d
+    secret: 3f8311d4eddb829a53868b59da475eda

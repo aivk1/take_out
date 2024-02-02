@@ -16,4 +16,5 @@ public interface DishService {
     public DishVO getDishWithFlavorById(Long id);
     public void update(DishDTO dishDTO);
     public List<DishVO> listWithFlavor(Dish dish);
+    public void startOrStop(Dish dish);
 }

@@ -100,13 +100,12 @@ public class DishServiceImpl implements DishService {
         dishFlavorMapper.delete(dish.getId());
         dishFlavorMapper.insertBatch(dishDTO.getFlavors());
     }
-
-    @Override
     public List<DishVO> listWithFlavor(Dish dish) {
         List<Dish> dishList = dishMapper.list(dish);
 
         List<DishVO> dishVOList = new ArrayList<>();
         for(Dish d:dishList){
+            if(d.getStatus()==0){continue;}
             DishVO dishVO = new DishVO();
             BeanUtils.copyProperties(d,dishVO);
 
@@ -116,5 +115,9 @@ public class DishServiceImpl implements DishService {
             dishVOList.add(dishVO);
         }
         return dishVOList;
+    }
+
+    public void startOrStop(Dish dish) {
+        dishMapper.update(dish);
     }
 }

@@ -17,12 +17,15 @@ import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.SetmealService;
 import com.sky.vo.DishItemVO;
+import com.sky.vo.DishVO;
 import com.sky.vo.SetmealVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -56,5 +59,48 @@ public class SetmealServiceImpl implements SetmealService {
      */
     public List<DishItemVO> getDishItemById(Long id) {
         return setmealMapper.getDishItemBySetmealId(id);
+    }
+
+    /**
+     * 新增套餐
+     * @param setmealDTO
+     * @return
+     */
+    public void saveWithDish(SetmealDTO setmealDTO){
+        Setmeal setmeal = new Setmeal();
+        BeanUtils.copyProperties(setmealDTO, setmeal);
+        setmealMapper.saveWithDish(setmeal);
+        for(SetmealDish setmealDish:setmealDTO.getSetmealDishes()){
+            setmealDishMapper.save(setmealDish);
+        }
+    }
+    public void deleteByIds(List<Long> ids){
+        for(long id:ids){
+            Setmeal setmeal = setmealMapper.getById(id);
+            if(setmeal.getStatus() == 1){
+                throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);//菜品还在发售
+            }
+        }
+        setmealMapper.deleteByIds(ids);
+        setmealDishMapper.deleteByIds(ids);
+    }
+    public void update(SetmealDTO setmealDTO){
+        Setmeal setmeal = new Setmeal();
+        BeanUtils.copyProperties(setmealDTO, setmeal);
+        setmealMapper.update(setmeal);
+        List<Long> temp = new ArrayList<>();
+        temp.add(setmeal.getId());
+        setmealDishMapper.deleteByIds(temp);
+        for(SetmealDish setmealDish:setmealDTO.getSetmealDishes()){
+            setmealDishMapper.save(setmealDish);
+        }
+    }
+    public void startOrStop(Setmeal setmeal) {
+        setmealMapper.startOrStop(setmeal);
+    }
+    public PageResult pageQuery(SetmealPageQueryDTO setmealPageQueryDTO){
+        PageHelper.startPage(setmealPageQueryDTO.getPage(), setmealPageQueryDTO.getPageSize());
+        Page<SetmealVO> page = setmealMapper.pageQuery(setmealPageQueryDTO);
+        return new PageResult(page.getTotal(), page.getResult());
     }
 }

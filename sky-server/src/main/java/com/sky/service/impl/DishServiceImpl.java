@@ -77,12 +77,8 @@ public class DishServiceImpl implements DishService {
         if(setmealDish!=null && setmealDish.size()>0){
             throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);//菜品被套餐关联
          }
-
-        for(Long id:ids){
-            dishFlavorMapper.delete(id);
-            dishMapper.delete(id);
-
-        }
+        dishMapper.deleteByIds(ids);
+        dishFlavorMapper.deleteByDishIds(ids);
 
     }
     public DishVO getDishWithFlavorById(Long id){
@@ -97,7 +93,9 @@ public class DishServiceImpl implements DishService {
         Dish dish = new Dish();
         BeanUtils.copyProperties(dishDTO, dish);
         dishMapper.update(dish);
-        dishFlavorMapper.delete(dish.getId());
+        List<Long> ids = new ArrayList<>();
+        ids.add(dish.getId());
+        dishFlavorMapper.deleteByDishIds(ids);
         dishFlavorMapper.insertBatch(dishDTO.getFlavors());
     }
     public List<DishVO> listWithFlavor(Dish dish) {

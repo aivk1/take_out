@@ -24,6 +24,13 @@
         order by create_time desc
     </select>
 
+    <delete id="deleteByIds">
+        delete from dish wehere id in
+        <foreach collection="ids" open="(" close=")" item="id" separator=",">
+            #{ids}
+        </foreach>
+    </delete>
+
     <update id="update" parameterType="com.sky.entity.Dish">
         update dish
         <set>

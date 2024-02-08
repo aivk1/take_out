@@ -18,8 +18,8 @@ public interface DishFlavorMapper {
 
 //    @AutoFill(value = OperationType.INSERT)
     void insertBatch(List<DishFlavor> flavors);
-    @Delete("delete from dish_flavor where dish_id = id")
-    void delete(Long id);
+//    @Delete("delete from dish_flavor where dish_id = id")
+    void deleteByDishIds(List<Long> ids);
     @Select("select * from dish_flavor where id=#{id}")
     List<DishFlavor> getById(Long id);
     @Select("select * from dish_flavor where dish_id = #{id}")

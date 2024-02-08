@@ -17,4 +17,46 @@
             </if>
         </where>
     </select>
+
+    <insert id="saveWithDish">
+        insert into setmeal(category_id, name, price, status, description, image, create_Time, create_user, update_time, update_user)
+        values (#{categoryId}, #{name}, #{price}, #{status}, #{description}, #{image}, #{createTime}, #{createUser}, #{updateTime}, #{updateUser})
+    </insert>
+    <delete id="deleteByIds">
+        delete from setmeal where id in
+        <foreach collection="ids" separator="," item="id" open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
+    <update id="update" parameterType="com.sky.entity.Setmeal">
+        update setmeal
+        <set>
+            <if test="categoryId!=null"> category_id = #{categoryId},</if>
+            <if test="name!=null"> name = #{name},</if>
+            <if test="price!=null"> price = #{price},</if>
+            <if test="status!=null"> status = #{status},</if>
+            <if test="image!=null"> image = #{image},</if>
+            <if test="createTime!=null"> create_Time = #{createTime},</if>
+            <if test="createUser!=null"> create_User = #{createUser},</if>
+            <if test="updateTime!=null"> update_Time = #{updateTime},</if>
+            <if test="updateUser!=null"> update_User = #{updateUser},</if>
+        </set>
+        where id = #{id}
+
+    </update>
+    <select id="pageQuery" parameterType="com.sky.dto.SetmealPageQueryDTO" resultType="com.sky.vo.SetmealVO">
+        select s.*, c.name from setmeal s left outer join category as c on s.category_id = c.id
+        <where>
+            <if test="categoryId!=null">
+                and c.id = #{categoryId}
+            </if>
+            <if test="name!=null">
+                and s.name like concat('%', #{name}, '%')
+            </if>
+            <if test="status!=null">
+                and s.status = #{status}
+            </if>
+        </where>
+        order by create_time desc
+    </select>
 </mapper>

@@ -1,5 +1,6 @@
 package com.sky.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -51,6 +52,7 @@ public class Orders implements Serializable {
     //地址id
     private Long addressBookId;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     //下单时间
     private LocalDateTime orderTime;
 

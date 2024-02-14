@@ -35,4 +35,79 @@
         </set>
         where id = #{id}
     </update>
+    <select id="history" parameterType="com.sky.dto.OrdersPageQueryDTO" resultType="com.sky.vo.OrderVO">
+        select * from orders
+        where user_id = #{userId}
+        <if test="status != null">
+            and status = #{status}
+        </if>
+    </select>
+    <select id="pageQuery" parameterType="com.sky.dto.OrdersPageQueryDTO" resultType="com.sky.vo.OrderVO">
+        select * from orders
+        <where>
+            <if test="beginTime!=null">and order_time > #{beginTime}</if>
+            <if test="endTime!=null">and order_time &lt; #{endTime}</if>
+            <if test="number!=null">and number = #{number}</if>
+            <if test="phone!=null">and phone = #{phone}</if>
+            <if test="status!=null">and status = #{status}</if>
+        </where>
+    </select>
+    <select id="sumByMap" resultType="java.lang.Double">
+        select sum(amount) from orders
+        <where>
+            <if test="begin != null">
+               and order_time &gt; #{begin}
+            </if>
+            <if test="end != null">
+                and order_time &lt; #{end}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+    </select>
+    <select id="countByMap" resultType="java.lang.Integer">
+        select count(id) as count from orders
+        <where>
+            <if test="begin != null">
+                and order_time &gt; #{begin}
+            </if>
+            <if test="end != null">
+                and order_time &lt; #{end}
+            </if>
+        </where>
+    </select>
+    <select id="countValidOrderByMap" resultType="java.lang.Integer">
+        select count(id) as count from orders
+        <where>
+            <if test="begin != null">
+                and order_time &gt; #{begin}
+            </if>
+            <if test="end != null">
+                and order_time &lt; #{end}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+    </select>
+    <select id="getGoodsSaleDTOS" resultType="com.sky.dto.GoodsSalesDTO">
+        select d.name, sum(d.number) number
+        from orders o, order_detail d
+        <where>
+            <if test="begin != null">
+                and order_time &gt; #{begin}
+            </if>
+            <if test="end != null">
+                and order_time &lt; #{end}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            and o.id = d.order_id
+        </where>
+        group by d.name
+        order by number desc
+        limit 0,10
+    </select>
 </mapper>

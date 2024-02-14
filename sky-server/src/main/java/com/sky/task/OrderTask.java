@@ -1,4 +1,4 @@
-package com.sky;
+package com.sky.task;
 
 import com.sky.entity.Orders;
 import com.sky.mapper.OrderMapper;
@@ -31,7 +31,7 @@ public class OrderTask {
         }
     }
 
-    @Scheduled(cron = "0 0 1 * * ? *")
+    @Scheduled(cron = "0 0 1 * * ? ")
 
     public void processDeliveryOrder(){
         log.info("自动update运输中的订单");

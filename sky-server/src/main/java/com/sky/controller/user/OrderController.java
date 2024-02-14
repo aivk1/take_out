@@ -1,11 +1,15 @@
 package com.sky.controller.user;
 
+import com.sky.context.BaseContext;
+import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
+import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.OrderService;
 import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderSubmitVO;
+import com.sky.vo.OrderVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -45,5 +49,30 @@ public class OrderController {
         return Result.success(orderPaymentVO);
     }
 
+    @GetMapping("/reminder/{path}")
+    @ApiOperation("催单提醒")
+    public Result remind(@PathVariable("path") Long id){
+        orderService.remind(id);
+        return Result.success();
+    }
+    @PostMapping("/repetition/{id}")
+    @ApiOperation("再来一单")
+    public Result repetition(@PathVariable("id") Long id){
+        orderService.repetition(id);
+        return Result.success();
+    }
 
+    @GetMapping("/historyOrders")
+    @ApiOperation("查询历史订单")
+    public Result<PageResult> history(OrdersPageQueryDTO ordersPageQueryDTO){
+        ordersPageQueryDTO.setUserId(BaseContext.getCurrentId());
+        PageResult result = orderService.history(ordersPageQueryDTO);
+        return Result.success(result);
+    }
+    @GetMapping("/orderDetail/{id}")
+    @ApiOperation("查询订单详情")
+    public Result<OrderVO> getOrderDetail(@PathVariable("id") Long id){
+        OrderVO orderVO = orderService.getOrderDetail(id);
+        return Result.success(orderVO);
+    }
 }

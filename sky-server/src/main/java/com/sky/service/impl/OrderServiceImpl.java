@@ -1,28 +1,40 @@
 package com.sky.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
-import com.sky.dto.OrdersPaymentDTO;
-import com.sky.dto.OrdersSubmitDTO;
+import com.sky.dto.*;
 import com.sky.entity.*;
 import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
 import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.*;
+import com.sky.result.PageResult;
+import com.sky.result.Result;
 import com.sky.service.OrderService;
 import com.sky.utils.WeChatPayUtil;
 import com.sky.vo.OrderPaymentVO;
+import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
+import com.sky.vo.OrderVO;
+import com.sky.websocket.WebSocketServer;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -38,6 +50,8 @@ public class OrderServiceImpl implements OrderService {
     private UserMapper userMapper;
     @Autowired
     private WeChatPayUtil weChatPayUtil;
+    @Autowired
+    private WebSocketServer webSocketServer;
 
     @Transactional
     public OrderSubmitVO submitOrder(OrdersSubmitDTO ordersSubmitDTO){
@@ -133,5 +147,137 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderMapper.update(orders);
+
+        Map map = new HashMap();
+        map.put("type", 1);
+        map.put("orderId", orders.getId());
+        map.put("content","订单号："+outTradeNo);
+        String json = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
     }
+
+    @Override
+    public void remind(Long id) {
+        Orders order = orderMapper.getById(id);
+        if(order == null){
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        Map map = new HashMap();
+        map.put("type", 2);
+        map.put("orderId", id);
+        map.put("content", "订单号："+order.getNumber());
+        String json = JSON.toJSONString(map);
+
+        webSocketServer.sendToAllClient(json);
+    }
+    @Transactional
+    public void repetition(Long id){
+        Orders order = orderMapper.getById(id);
+        orderMapper.insert(order);
+        order.setNumber(String.valueOf(System.currentTimeMillis()));
+        order.setOrderTime(LocalDateTime.now());
+        order.setPayStatus(Orders.UN_PAID);
+        order.setStatus(Orders.PENDING_PAYMENT);
+        orderMapper.insert(order);
+        List<OrderDetail> orderDetails = orderDetailMapper.getByOrderId(id);
+        if(orderDetails!=null && orderDetails.size()!=0){
+            for(OrderDetail detail:orderDetails){
+                detail.setOrderId(order.getId());
+            }
+            orderDetailMapper.insertBatch(orderDetails);
+        }
+    }
+
+    public PageResult history(OrdersPageQueryDTO ordersPageQueryDTO){
+        PageHelper.startPage(ordersPageQueryDTO.getPage(), ordersPageQueryDTO.getPageSize());
+        Page<OrderVO> page = orderMapper.history(ordersPageQueryDTO);
+        for(OrderVO orderVO:page){
+            orderVO.setOrderDetailList(orderDetailMapper.getByOrderId(orderVO.getId()));
+        }
+         return new PageResult(page.getTotal(), page.getResult());
+    }
+
+    @Override
+    public OrderVO getOrderDetail(Long id) {
+        OrderVO orderVO = new OrderVO();
+        Orders order = orderMapper.getById(id);
+        List<OrderDetail> orderDetails = orderDetailMapper.getByOrderId(id);
+        BeanUtils.copyProperties(order, orderVO);
+        orderVO.setOrderDetailList(orderDetails);
+        return orderVO;
+    }
+    public OrderStatisticsVO getOrderStatisticsVO(){
+        OrderStatisticsVO orderStatisticsVO = new OrderStatisticsVO();
+        List<Orders> ordersList = orderMapper.getByStatusAndOrderTimeLT(Orders.CONFIRMED, LocalDateTime.now());
+        orderStatisticsVO.setConfirmed(ordersList.size());
+        ordersList = orderMapper.getByStatusAndOrderTimeLT(Orders.DELIVERY_IN_PROGRESS, LocalDateTime.now());
+        orderStatisticsVO.setDeliveryInProgress(ordersList.size());
+        ordersList = orderMapper.getByStatusAndOrderTimeLT(Orders.TO_BE_CONFIRMED, LocalDateTime.now());
+        orderStatisticsVO.setToBeConfirmed(ordersList.size());
+        return orderStatisticsVO;
+    }
+    public void cancel(OrdersCancelDTO ordersCancelDTO){
+        Orders order = orderMapper.getById(ordersCancelDTO.getId());
+        //退款
+
+
+        order.setStatus(Orders.CANCELLED);
+        order.setPayStatus(Orders.REFUND);
+        order.setCancelReason(ordersCancelDTO.getCancelReason());
+        order.setCancelTime(LocalDateTime.now());
+        orderMapper.update(order);
+    }
+    public void complete(Long id){
+        Orders order = orderMapper.getById(id);
+        if(order!=null) {
+            order.setStatus(Orders.COMPLETED);
+            order.setDeliveryTime(LocalDateTime.now());
+            orderMapper.update(order);
+        }
+        else{
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+    }
+    public void reject(OrdersRejectionDTO ordersRejectionDTO){
+        Orders order = orderMapper.getById(ordersRejectionDTO.getId());
+        if(order!=null){
+            order.setStatus(Orders.CANCELLED);
+            order.setRejectionReason(ordersRejectionDTO.getRejectionReason());
+            orderMapper.update(order);
+        }
+        else{
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+    }
+
+    public void confirm(OrdersConfirmDTO ordersConfirmDTO){
+        Orders order = orderMapper.getById(ordersConfirmDTO.getId());
+        if(order!=null){
+            order.setStatus(Orders.CONFIRMED);
+            orderMapper.update(order);
+        }
+        else{
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+    }
+    public void delivery(Long id){
+        Orders order = orderMapper.getById(id);
+        if(order!=null){
+            order.setStatus(Orders.DELIVERY_IN_PROGRESS);
+            orderMapper.update(order);
+        }
+        else{
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+    }
+    public PageResult pageQuery(OrdersPageQueryDTO ordersPageQueryDTO){
+        PageHelper.startPage(ordersPageQueryDTO.getPage(), ordersPageQueryDTO.getPageSize());
+        Page<OrderVO> orders = orderMapper.pageQuery(ordersPageQueryDTO);
+        for(OrderVO orderVO:orders){
+            List<OrderDetail> orderDetails = orderDetailMapper.getByOrderId(orderVO.getId());
+            orderVO.setOrderDetailList(orderDetails);
+        }
+        return new PageResult(orders.getTotal(), orders.getResult());
+    }
+
 }

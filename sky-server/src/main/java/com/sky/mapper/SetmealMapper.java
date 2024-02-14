@@ -15,6 +15,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface SetmealMapper {
@@ -65,4 +66,10 @@ public interface SetmealMapper {
     @Update("update setmeal set status = #{status} where id = #{id}")
     void startOrStop(Setmeal setmeal);
     Page<SetmealVO> pageQuery(SetmealPageQueryDTO setmealPageQueryDTO);
+    /**
+     * 根据条件统计套餐数量
+     * @param map
+     * @return
+     */
+    Integer countByMap(Map map);
 }
